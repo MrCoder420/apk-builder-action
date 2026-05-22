@@ -13,16 +13,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Clone Target Repo
+      - name: Clean and Clone Target Repo
         run: |
+          rm -rf * .github
           git clone ${{ github.event.inputs.repo_url }} .
-          # This dots ensures it clones into the current folder, not a subfolder
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          # Updated to 20 as required by the 'metro' packages in your log
+          node-version: 22
 
       - name: Install NPM Dependencies
         run: npm install --legacy-peer-deps
