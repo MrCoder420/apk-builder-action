@@ -19,16 +19,19 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install --legacy-peer-deps
-          npm install tailwindcss postcss # Required for NativeWind
+          npm install tailwindcss postcss @babel/runtime
 
-      - name: Fix Path Aliases
+      - name: Fix Expo Config & Cache
         run: |
-          # This tells the bundler that @/ refers to the current directory
-          # Sometimes Expo needs a little help resolving these on clean environments
-          npx expo customize tsconfig.json || true
+          # Ensure an app.json exists with basic info to satisfy the bundler
+          if [ ! -f app.json ]; then
+            echo '{"expo": {"name": "SoulShuffle", "slug": "soulshuffle", "version": "1.0.0"}}' > app.json
+          fi
+          # Clear metro cache to force fresh path resolution
+          rm -rf /tmp/metro-cache
 
       - name: Expo Prebuild
-        run: npx expo prebuild --platform android
+        run: npx expo prebuild --platform android --skip-dependency-install
 
       - name: Setup Java
         uses: actions/setup-java@v4
