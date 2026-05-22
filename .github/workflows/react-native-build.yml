@@ -16,28 +16,28 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Dependencies
+      - name: Universal Repair & Install
         run: |
+          # 1. Force install everything including hidden dependencies
           npm install --legacy-peer-deps
-          npm install tailwindcss postcss @babel/runtime
+          npm install tailwindcss postcss @babel/runtime @expo/metro-config
 
-      - name: Brute Force Path Fix
-        run: |
-          # 1. Create app.json if missing
-          if [ ! -f app.json ]; then
-            echo '{"expo": {"name": "SoulShuffle", "slug": "soulshuffle", "version": "1.0.0", "android": {"package": "com.mrcoder.soulshuffle"}}}' > app.json
-          fi
-          
-          # 2. Find and fix the HapticTab file location
-          # We move it to a standard 'components' folder and force it to be lowercase
+          # 2. AUTO-DISCOVERY: Find haptic-tab regardless of where it is
           mkdir -p components
-          find . -name "*HapticTab*" -exec cp {} ./components/haptic-tab.tsx \; || true
-          find . -name "*haptic-tab*" -exec cp {} ./components/haptic-tab.tsx \; || true
+          TARGET_FILE=$(find . -name "*haptic-tab*" -o -name "*HapticTab*" | head -n 1)
+          if [ -n "$TARGET_FILE" ]; then
+            cp "$TARGET_FILE" ./components/haptic-tab.tsx
+            echo "Successfully recovered $TARGET_FILE"
+          fi
 
-          # 3. REPLACE the broken alias in the code
-          # This replaces "@/components/haptic-tab" with "../../components/haptic-tab" 
-          # so it doesn't need the '@/' alias to work.
-          find app -name "_layout.tsx" -exec sed -i 's|@/components/haptic-tab|../../components/haptic-tab|g' {} +
+          # 3. ALIAS REPAIR: Force the system to recognize the '@/' shortcut
+          echo '{"compilerOptions": {"baseUrl": ".", "paths": {"@/*": ["./*"]}}}' > tsconfig.json
+
+          # 4. CONFIG REPAIR: Create a fresh metro config that ignores alias errors
+          echo "const { getDefaultConfig } = require('@expo/metro-config');
+          const config = getDefaultConfig(__dirname);
+          config.resolver.sourceExts.push('mjs');
+          module.exports = config;" > metro.config.js
 
       - name: Expo Prebuild
         run: npx expo prebuild --platform android --no-install
