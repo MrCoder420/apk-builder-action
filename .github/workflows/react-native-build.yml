@@ -21,17 +21,19 @@ jobs:
           npm install --legacy-peer-deps
           npm install tailwindcss postcss @babel/runtime
 
-      - name: Fix Expo Config & Cache
+      - name: Fix Config and Case Sensitivity
         run: |
-          # Ensure an app.json exists with basic info to satisfy the bundler
+          # Create app.json if missing
           if [ ! -f app.json ]; then
-            echo '{"expo": {"name": "SoulShuffle", "slug": "soulshuffle", "version": "1.0.0"}}' > app.json
+            echo '{"expo": {"name": "SoulShuffle", "slug": "soulshuffle", "version": "1.0.0", "android": {"package": "com.mrcoder.soulshuffle"}}}' > app.json
           fi
-          # Clear metro cache to force fresh path resolution
+          # Clear any stuck cache
           rm -rf /tmp/metro-cache
+          # Force the bundler to see the haptic-tab file even if it's named differently
+          find . -name "HapticTab.tsx" -exec cp {} ./components/haptic-tab.tsx \; 2>/dev/null || true
 
       - name: Expo Prebuild
-        run: npx expo prebuild --platform android --skip-dependency-install
+        run: npx expo prebuild --platform android --no-install
 
       - name: Setup Java
         uses: actions/setup-java@v4
