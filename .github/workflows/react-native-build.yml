@@ -18,25 +18,26 @@ jobs:
 
       - name: Universal Repair & Install
         run: |
-          # 1. Force install everything including hidden dependencies
+          # 1. Install dependencies
           npm install --legacy-peer-deps
           npm install tailwindcss postcss @babel/runtime @expo/metro-config
 
-          # 2. AUTO-DISCOVERY: Find haptic-tab regardless of where it is
-          mkdir -p components
+          # 2. AUTO-DISCOVERY: Find and place the missing haptic-tab file
+          # We use a temporary folder to avoid "copying onto itself" errors
+          mkdir -p temp_components
           TARGET_FILE=$(find . -name "*haptic-tab*" -o -name "*HapticTab*" | head -n 1)
           if [ -n "$TARGET_FILE" ]; then
-            cp "$TARGET_FILE" ./components/haptic-tab.tsx
-            echo "Successfully recovered $TARGET_FILE"
+            cp "$TARGET_FILE" temp_components/haptic-tab.tsx
+            mkdir -p components
+            cp temp_components/haptic-tab.tsx components/haptic-tab.tsx || true
           fi
 
           # 3. ALIAS REPAIR: Force the system to recognize the '@/' shortcut
           echo '{"compilerOptions": {"baseUrl": ".", "paths": {"@/*": ["./*"]}}}' > tsconfig.json
 
-          # 4. CONFIG REPAIR: Create a fresh metro config that ignores alias errors
+          # 4. CONFIG REPAIR: Fresh metro config to ensure path resolution
           echo "const { getDefaultConfig } = require('@expo/metro-config');
           const config = getDefaultConfig(__dirname);
-          config.resolver.sourceExts.push('mjs');
           module.exports = config;" > metro.config.js
 
       - name: Expo Prebuild
