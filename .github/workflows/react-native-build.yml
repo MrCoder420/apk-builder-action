@@ -21,16 +21,23 @@ jobs:
           npm install --legacy-peer-deps
           npm install tailwindcss postcss @babel/runtime
 
-      - name: Fix Config and Case Sensitivity
+      - name: Brute Force Path Fix
         run: |
-          # Create app.json if missing
+          # 1. Create app.json if missing
           if [ ! -f app.json ]; then
             echo '{"expo": {"name": "SoulShuffle", "slug": "soulshuffle", "version": "1.0.0", "android": {"package": "com.mrcoder.soulshuffle"}}}' > app.json
           fi
-          # Clear any stuck cache
-          rm -rf /tmp/metro-cache
-          # Force the bundler to see the haptic-tab file even if it's named differently
-          find . -name "HapticTab.tsx" -exec cp {} ./components/haptic-tab.tsx \; 2>/dev/null || true
+          
+          # 2. Find and fix the HapticTab file location
+          # We move it to a standard 'components' folder and force it to be lowercase
+          mkdir -p components
+          find . -name "*HapticTab*" -exec cp {} ./components/haptic-tab.tsx \; || true
+          find . -name "*haptic-tab*" -exec cp {} ./components/haptic-tab.tsx \; || true
+
+          # 3. REPLACE the broken alias in the code
+          # This replaces "@/components/haptic-tab" with "../../components/haptic-tab" 
+          # so it doesn't need the '@/' alias to work.
+          find app -name "_layout.tsx" -exec sed -i 's|@/components/haptic-tab|../../components/haptic-tab|g' {} +
 
       - name: Expo Prebuild
         run: npx expo prebuild --platform android --no-install
