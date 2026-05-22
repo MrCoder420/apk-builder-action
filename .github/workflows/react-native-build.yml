@@ -14,17 +14,18 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Clone Target Repo
-        run: git clone ${{ github.event.inputs.repo_url }} target-app
+        run: |
+          git clone ${{ github.event.inputs.repo_url }} .
+          # This dots ensures it clones into the current folder, not a subfolder
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          # Updated to 20 as required by the 'metro' packages in your log
 
       - name: Install NPM Dependencies
-        run: |
-          cd target-app
-          npm install --legacy-peer-deps
+        run: npm install --legacy-peer-deps
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -34,7 +35,7 @@ jobs:
 
       - name: Build Android Release
         run: |
-          cd target-app/android
+          cd android
           chmod +x gradlew
           ./gradlew assembleRelease
 
@@ -42,4 +43,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: soulshuffle-apk
-          path: target-app/android/app/build/outputs/apk/release/*.apk
+          path: android/app/build/outputs/apk/release/*.apk
