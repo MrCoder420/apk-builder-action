@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: production
     steps:
       - name: Clone Target Repo
         run: git clone ${{ github.event.inputs.repo_url }} .
@@ -24,7 +26,6 @@ jobs:
 
       - name: Generate Native Android Folder
         run: npx expo prebuild --platform android
-        # This creates the missing 'android' folder that kept failing
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -36,7 +37,8 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
+          # Added flags to skip unnecessary checks and focus on the bundle
+          ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
