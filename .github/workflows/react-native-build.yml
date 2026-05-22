@@ -1,11 +1,6 @@
 name: React Native APK Build
 on:
   workflow_dispatch:
-    inputs:
-      repo_url:
-        description: 'Git repository URL'
-        required: true
-        default: 'https://github.com/priyanshusharma99/SoulShuffle'
 
 jobs:
   build:
@@ -13,34 +8,37 @@ jobs:
     env:
       NODE_ENV: production
     steps:
-      - name: Clone Target Repo
-        run: git clone ${{ github.event.inputs.repo_url }} .
+      - name: Clone Repo
+        run: git clone https://github.com/priyanshusharma99/SoulShuffle .
 
-      - name: Install Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install Dependencies
-        run: npm install --legacy-peer-deps
+      - name: Smart Install
+        run: |
+          # The --install-links and --include=dev flags help find hidden requirements
+          npm install --legacy-peer-deps --include=dev
+          # Force install tailwind because the SoulShuffle code specifically asks for it
+          npm install tailwindcss postcss
 
-      - name: Generate Native Android Folder
+      - name: Expo Setup
         run: npx expo prebuild --platform android
 
-      - name: Set up JDK 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build Android Release
+      - name: Build APK
         run: |
           cd android
           chmod +x gradlew
-          # Added flags to skip unnecessary checks and focus on the bundle
           ./gradlew assembleRelease --no-daemon
 
-      - name: Upload APK
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: soulshuffle-apk
