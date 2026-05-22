@@ -16,14 +16,18 @@ jobs:
         with:
           node-version: 22
 
-      - name: Smart Install
+      - name: Install Dependencies
         run: |
-          # The --install-links and --include=dev flags help find hidden requirements
-          npm install --legacy-peer-deps --include=dev
-          # Force install tailwind because the SoulShuffle code specifically asks for it
-          npm install tailwindcss postcss
+          npm install --legacy-peer-deps
+          npm install tailwindcss postcss # Required for NativeWind
 
-      - name: Expo Setup
+      - name: Fix Path Aliases
+        run: |
+          # This tells the bundler that @/ refers to the current directory
+          # Sometimes Expo needs a little help resolving these on clean environments
+          npx expo customize tsconfig.json || true
+
+      - name: Expo Prebuild
         run: npx expo prebuild --platform android
 
       - name: Setup Java
